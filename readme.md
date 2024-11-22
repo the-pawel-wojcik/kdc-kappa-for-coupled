@@ -1,7 +1,7 @@
 # KDC Hamitonian parameters
 These scripts find the diabatic potential along coupling modes in the KDC
 Hamiltonian. The input requires the linear diabatic coupling (lambda) and the
-adiabatic surfaces along on both of the coupled states.
+adiabatic surfaces along both of the coupled states.
 
 ## How to use this
 
@@ -17,10 +17,11 @@ for out in  out.000*.c4; do cfour_proc/print_roots.py -j ${out%%.c4}.json | jq >
 ```
 Run
 ```bash
-python src/get_points out*.root.json | jq > sample_data/model_mode.json
-python src/sanitize_points sample_data/model_mode.json | jq > sample_data/model_mode_cm.json
+python src/get_points.py out*.root.json | jq > sample_data/model_mode.json
+python src/sanitize_points.py sample_data/model_mode.json | jq > sample_data/model_mode_cm.json
 ```
-Use the last file from the `src/fit_kdc.py` script.
+Feed the last file to the `src/fit_kdc.py` script. Other scripts in `src` can
+disply the outcome.
 
 ## Adiabatic surface for pyrazine
 [Only one coupling mode](sample_data/pyrazine/nu8.pdf)

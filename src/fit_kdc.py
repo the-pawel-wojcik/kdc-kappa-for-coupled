@@ -2,7 +2,7 @@
 
 import argparse
 import json
-from scipy.optimize import curve_fit
+import scipy.optimize as sopt
 import os
 
 au_to_cm = 219474.629370
@@ -61,49 +61,46 @@ def get_args():
 
 def main():
     # args = get_args()
-    # with open(args.pes_file, 'r') as pes_file_obj:
-    #     pes = json.load(pes_file_obj)
-
-    filename = '../sample_data/nu5-mulliken-pes_cm.json'
-    filename = '../sample_data/nu8-mulliken-pes_cm.json'
+    # filename = args.pes_file
+    # filename = '../sample_data/pyrazine/nu5-mulliken-pes_cm.json'
+    filename = '../sample_data/pyrazine/nu8-mulliken-pes_cm.json'
     print(f"Using {os.path.basename(filename)}")
     with open(filename, 'r') as pes_file_obj:
         pes = json.load(pes_file_obj)
 
     dq = pes["displacements, dQ (DNC)"]
     b3u = pes['B3u, cm-1']
-
-    initial_guess = [0, 1000, 0, 1000]
-    kappas_from_b3u, pcov = curve_fit(
-        f=ab_initio_down,
-        xdata=dq,
-        ydata=b3u,
-        p0=initial_guess,
-    )
-    print("Kappas from fitting to B3u:")
-    print("B3u:")
-    print(f" 1st: {kappas_from_b3u[0]:6.1f}")
-    print(f" 2nd: {kappas_from_b3u[1]:6.1f}")
-    print("B2u:")
-    print(f" 1st: {kappas_from_b3u[2]:6.1f}")
-    print(f" 2nd: {kappas_from_b3u[3]:6.1f}\n")
-
     b2u = pes['B2u, cm-1']
     min_b2u = min(b2u)
     b2u_shifted = [b - min_b2u for b in b2u]
-    kappas_from_b2u, pcov = curve_fit(
-        f=ab_initio_up,
-        xdata=dq,
-        ydata=b2u_shifted,
-        p0=initial_guess,
+
+    initial_guess = (0, 1000, 0, 1000)
+
+    def target_function(kappas: tuple[float, float, float, float]):
+        sum = 0.0
+        for lower, upper, q in zip(b3u, b2u_shifted, dq):
+            sum += abs(lower - ab_initio_down(q, *kappas))
+            sum += abs(upper - ab_initio_up(q, *kappas))
+        return sum
+
+    optimization_result: sopt.OptimizeResult = sopt.minimize(
+        fun=target_function,
+        x0=initial_guess,
+        method='nelder-mead',
     )
-    print("Kappas from fitting to B2u:")
+
+    kappas_optimized = optimization_result.x
+    success = optimization_result.success
+
+    print(f"Has the minimization converged: {success}")
+
+    print("Fitted kappas:")
     print("B3u:")
-    print(f" 1st: {kappas_from_b2u[0]:6.1f}")
-    print(f" 2nd: {kappas_from_b2u[1]:6.1f}")
+    print(f" 1st: {kappas_optimized[0]:6.1f}")
+    print(f" 2nd: {kappas_optimized[1]:6.1f}")
     print("B2u:")
-    print(f" 1st: {kappas_from_b2u[2]:6.1f}")
-    print(f" 2nd: {kappas_from_b2u[3]:6.1f}\n")
+    print(f" 1st: {kappas_optimized[2]:6.1f}")
+    print(f" 2nd: {kappas_optimized[3]:6.1f}\n")
 
 
 if __name__ == "__main__":
