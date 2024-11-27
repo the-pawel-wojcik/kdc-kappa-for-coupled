@@ -12,12 +12,12 @@ Get as the outcome a series of out.xxxxx.c4 files with the enrgies. Run them
 through the `cfour_parser -j` and `cfour_proc/print_roots.py -j` to get a set
 of `out.xxxxx.root.json` files. 
 ```bash
-for out in  out.000*.c4; do cfour_parser -j $out | jq >  ${out%%.c4}.json; done
-for out in  out.000*.c4; do cfour_proc/print_roots.py -j ${out%%.c4}.json | jq > ${out%%.c4}.roots.json; done
+for out in out.000*.c4; do cfour_parser -j $out | jq > ${out%%.c4}.json; done
+for out in out.000*.c4; do cfour_proc/print_roots.py -j ${out%%.c4}.json | jq > ${out%%.c4}.roots.json; done
 ```
 Run
 ```bash
-python src/get_points.py out*.root.json | jq > sample_data/model_mode.json
+python src/get_points.py out*.roots.json --pick_states <state_name>=<state_number>... | jq > sample_data/model_mode.json
 python src/sanitize_points.py sample_data/model_mode.json | jq > sample_data/model_mode_cm.json
 ```
 Feed the last file to the `src/fit_kdc.py` script. Other scripts in `src` can

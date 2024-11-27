@@ -18,19 +18,24 @@ def main():
     with open(args.pes_file, 'r') as pes_file_obj:
         pes = json.load(pes_file_obj)
 
-    min_energy_au = min(pes['B3u au'])
-    b3u = [
-        (energy_au - min_energy_au) * au_to_cm for energy_au in pes['B3u au']
-    ]
-    b2u = [
-        (energy_au - min_energy_au) * au_to_cm for energy_au in pes['B2u au']
-    ]
+    displacements = pes['displacements']
+    del pes['displacements']
+    cleared_states = dict()
+    for state_name, energies in pes.items():
+        min_energy_au = min(energies)
+        energies_cm = [(energy_au - min_energy_au) * au_to_cm
+                       for energy_au in energies]
+        cleared_states[state_name] = {
+            'energies, cm-1': energies_cm,
+            'min energy, cm-1': min_energy_au * au_to_cm,
+        }
 
-    print(json.dumps({
-        'displacements, dQ (DNC)': pes['displacements'],
-        'B3u, cm-1': b3u,
-        'B2u, cm-1': b2u,
-    }))
+    out_pack = {
+        'displacements': displacements,
+        'states': cleared_states,
+    }
+
+    print(json.dumps(out_pack))
 
 
 if __name__ == "__main__":

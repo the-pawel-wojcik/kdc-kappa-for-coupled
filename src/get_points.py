@@ -3,6 +3,31 @@
 import argparse
 import json
 import numpy as np
+import sys
+
+
+class keyvalue(argparse.Action):
+    def __call__(
+            self,
+            parser,
+            namespace,
+            values,
+            option_string=None,
+    ):
+        setattr(namespace, self.dest, dict())
+
+        for value in values:
+            state, number_str = value.split('=')
+            try:
+                number = int(number_str)
+            except Exception:
+                print(
+                    f"Error in parsing {value} from command line.",
+                    f"{number_str} is not an integer",
+                    file=sys.stderr
+                )
+                raise Exception
+            getattr(namespace, self.dest)[state] = number
 
 
 def show_amps(root):
@@ -26,6 +51,13 @@ def show_amps(root):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('roots', nargs='+')
+    parser.add_argument(
+        '--pick_states',
+        nargs='*',
+        help="List of states that will be extracted. Format <name>=<number>,"
+        "where <name> is a string and <number> is an integer.",
+        action=keyvalue
+    )
     parser.add_argument('-v', '--verbose', default=False, action='store_true')
     args = parser.parse_args()
     return args
@@ -33,29 +65,31 @@ def get_args():
 
 def main():
     args = get_args()
-    b3u_energies = list()
-    b2u_energies = list()
+    pick_states = args.pick_states
+
+    energies = {key: list() for key in pick_states}
     for file_id, fname in enumerate(args.roots):
         with open(fname, 'r') as file:
             roots = json.load(file)
-            b3u_root = roots[0]
-            b3u_energies.append(b3u_root['energy']['total']['au'])
-            if args.verbose:
-                print("1B3u amplitudes: ", end="")
-                show_amps(b3u_root)
-            b2u_root = roots[1]
-            b2u_energies.append(b2u_root['energy']['total']['au'])
-            if args.verbose:
-                print("1B2u amplitudes: ", end="")
-                show_amps(b2u_root)
+            for state_name, state_number in pick_states.items():
+                root = roots[state_number]
+                energies[state_name].append(root['energy']['total']['au'])
+                if args.verbose:
+                    print(f"{state_name} amplitudes: ", end="")
+                    show_amps(root)
+    out_pack = {
+        state_name + " au": energies[state_name]
+        for state_name in pick_states
+    }
 
-    displacements = np.linspace(-0.2, 0.2, num=17)
+    print(
+        "Warning: Using x range from -0.2 to 0.2 in 17 steps",
+        file=sys.stderr
+    )
+    displacements: np.ndarray = np.linspace(-0.2, 0.2, num=17)
+    out_pack['displacements'] = displacements.tolist()
 
-    print(json.dumps({
-        'displacements': [d for d in displacements],
-        'B3u au': b3u_energies,
-        'B2u au': b2u_energies,
-    }))
+    print(json.dumps(out_pack))
 
 
 if __name__ == "__main__":
