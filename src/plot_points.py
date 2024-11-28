@@ -4,6 +4,7 @@ import argparse
 import json
 import matplotlib
 import matplotlib.pyplot as plt
+from fit_kdc import ab_initio_up, ab_initio_down
 from sp_text import str_to_tex
 
 au_to_cm = 219474.629370
@@ -12,30 +13,31 @@ au_to_cm = 219474.629370
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('pes_file')
+    parser.add_argument(
+        '--kappas_json',
+        help='Plot also the fitted potential.',
+    )
     args = parser.parse_args()
     return args
 
 
-def plot_adiabatic_pes(ax: matplotlib.axes.Axes, pes: dict):
+def plot_adiabatic_pes(
+        ax: matplotlib.axes.Axes,
+        dq: list[float],
+        states: list[dict]):
     """
-    pes['displacements, DNC'] is a list of floats
-    pes['states'] is a dictionary:
-        its keys are the state names
-        its values are:
-            'min energy, cm-1': float
-            'energies, cm-1': list[float]
+    each of states has:
+        'name': str
+        'min energy, cm-1': float
+        'energies, cm-1': list[float]
     """
-    dq: list[float] = pes["displacements, DNC"]
-    states: dict = pes['states']
-    global_pes_min = min(
-        [state['min energy, cm-1'] for state in states.values()]
-    )
-    for state_name, state_props in states.items():
-        pes = state_props['energies, cm-1']
-        pes_min = state_props['min energy, cm-1']
+    global_pes_min = min([state['min energy, cm-1'] for state in states])
+    for state in states:
+        pes = state['energies, cm-1']
+        pes_min = state['min energy, cm-1']
         energy_shift = pes_min - global_pes_min
 
-        label = str_to_tex(state_name.split()[0])
+        label = str_to_tex(state['name'])
         if energy_shift > 1.0:
             label += f"$ - {energy_shift:.0f}$" + r" cm$^{-1}$"
 
@@ -44,11 +46,11 @@ def plot_adiabatic_pes(ax: matplotlib.axes.Axes, pes: dict):
     ax.set_xlabel(r"$Q$ (DNC)")
     ax.set_ylabel(r"E, cm$^{-1}$")
     ax.legend(
-            draggable=True,
-            handlelength=0.8,
-            handletextpad=0.4,
-            borderpad=0.4,
-            labelspacing=0.2,
+        draggable=True,
+        handlelength=0.8,
+        handletextpad=0.4,
+        borderpad=0.4,
+        labelspacing=0.2,
     )
     return ax
 
@@ -68,19 +70,20 @@ def main():
         layout='constrained',
     )
 
-    plot_adiabatic_pes(ax, pes)
+    dq = pes['displacements, DNC']
+    ax = plot_adiabatic_pes(ax, dq, pes['states'])
+    if args.kappas_json is not None:
+        with open(args.kappas_json, 'r') as kappas_json:
+            fitted_kappas = json.load(kappas_json)
 
-    # fitted_kappas = {
-    #     'kappa1A': 0.0,
-    #     'kappa2A': 651.9,
-    #     'kappa1B': 0.0,
-    #     'kappa2B': 861.4,
-    # }
-    # fitted_lower = [ab_initio_down(q, **fitted_kappas) for q in dq]
-    # fitted_upper = [ab_initio_up(q, **fitted_kappas) for q in dq]
+        dq = pes['displacements, DNC']
+        gap = pes['states'][1]['min energy, cm-1']
+        gap -= pes['states'][0]['min energy, cm-1']
+        fitted_lower = [ab_initio_down(q, gap, **fitted_kappas) for q in dq]
+        fitted_upper = [ab_initio_up(q, gap, **fitted_kappas) for q in dq]
 
-    # ax.scatter(dq, fitted_lower, s=8)
-    # ax.scatter(dq, fitted_upper, s=8)
+        ax.scatter(dq, fitted_lower, s=8)
+        ax.scatter(dq, fitted_upper, s=8)
 
     plt.show()
 

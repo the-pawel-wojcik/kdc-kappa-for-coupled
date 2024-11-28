@@ -20,8 +20,22 @@ Run
 python src/get_points.py out*.roots.json --pick_states <state_name>=<state_number>... | jq > sample_data/model_mode.json
 python src/sanitize_points.py sample_data/model_mode.json | jq > sample_data/model_mode_cm.json
 ```
-Feed the last file to the `src/fit_kdc.py` script. Other scripts in `src` can
-disply the outcome.
+You can view the adiabatic surfaces using 
+```bash
+python src/plot_points.py <model_mode_cm.json>
+```
+To find the diabatic expansion parameters use
+```bash
+# Before use edit the value of the diabatic coupling in the fit_kdc file
+# lambda1AB
+python ./src/fit_kdc.py <model_mode_cm.json> --verbose
+# or 
+python ./src/fit_kdc.py <model_mode_cm.json> --json | jq > sample_data/model_mode_kappas.json
+```
+If you use the second option, you can view the fitting resutls with
+```bash
+python src/plot_points.py --kappas sample_data/model_kappas.json sample_data/model.json
+```
 
 ## Adiabatic surface for pyrazine
 [Only one coupling mode](sample_data/pyrazine/nu8.pdf)

@@ -31,9 +31,15 @@ def main():
             'min energy, cm-1': min_energy_au * au_to_cm,
         }
 
+    states = [
+        {'name': state_name, **cleared_states[state_name]}
+        for state_name in cleared_states
+    ]
+    states.sort(key=lambda x: x['min energy, cm-1'])
+
     out_pack = {
         'displacements, DNC': displacements,
-        'states': cleared_states,
+        'states': states,
     }
 
     print(json.dumps(out_pack))
