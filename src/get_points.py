@@ -67,18 +67,18 @@ def main():
     args = get_args()
     pick_states = args.pick_states
 
-    energies = {key: list() for key in pick_states}
+    energies_au = {key: list() for key in pick_states}
     for file_id, fname in enumerate(args.roots):
         with open(fname, 'r') as file:
             roots = json.load(file)
             for state_name, state_number in pick_states.items():
                 root = roots[state_number]
-                energies[state_name].append(root['energy']['total']['au'])
+                energies_au[state_name].append(root['energy']['total']['au'])
                 if args.verbose:
                     print(f"{state_name} amplitudes: ", end="")
                     show_amps(root)
     out_pack = {
-        state_name + " au": energies[state_name]
+        state_name: {'energies, au': energies_au[state_name]}
         for state_name in pick_states
     }
 
@@ -87,7 +87,7 @@ def main():
         file=sys.stderr
     )
     displacements: np.ndarray = np.linspace(-0.2, 0.2, num=17)
-    out_pack['displacements'] = displacements.tolist()
+    out_pack['displacements, DNC'] = displacements.tolist()
 
     print(json.dumps(out_pack))
 
