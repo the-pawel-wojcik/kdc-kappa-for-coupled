@@ -3,11 +3,13 @@
 import argparse
 import json
 import scipy.optimize as sopt
-import os
 import sys
 import numpy
+from three_state import get_eigenvalues
 
-lambda1AB = 1560
+# lambda1AB = 1560  # pyrazie 1B3u 1B2u along nu8
+# lambda1AB = -504.8  # pyrazine 1B3u 1B1u along nu14
+lambda1AB = 1384.2  # pyrazine 1B3u 2B1u along nu14
 au_to_cm = 219474.629370
 
 
@@ -145,6 +147,25 @@ def main():
                 'kappa1B': kappas[2],
                 'kappa2B': kappas[3],
             }))
+    elif len(states) == 3:
+        lambda_14_1B3u_1B1u = -504.8
+        lambda_14_1B3u_2B1u = 1384.2
+        low = states[0]['energies, cm-1']
+        mid = states[1]['energies, cm-1']
+        top = states[2]['energies, cm-1']
+        for q, a, b, c in zip(dq, low, mid, top):
+            print(f"{q=:.3f}")
+
+            e_low, e_mid, e_top = get_eigenvalues(
+                q, a, b, c,
+                lambdaAB=lambda_14_1B3u_1B1u,
+                lambdaAC=lambda_14_1B3u_2B1u,
+            )
+            print(f"{e_low=}")
+            print(f"{e_mid=}")
+            print(f"{e_top=}")
+            break
+
     else:
         print("Only two-state fit is implemented."
               f" Input aks for a {len(states)}-state fit.",

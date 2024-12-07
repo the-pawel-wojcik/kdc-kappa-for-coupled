@@ -17,20 +17,20 @@ for out in out.000*.c4; do cfour_proc/print_roots.py -j ${out%%.c4}.json | jq > 
 ```
 Run
 ```bash
-python src/get_points.py out*.roots.json --pick_states <state_name>=<state_number>... | jq > sample_data/model_mode.json
-python src/sanitize_points.py sample_data/model_mode.json | jq > sample_data/model_mode_cm.json
+python src/get_points.py out*.roots.json --pick_states <state_name>=<state_number>... | jq > sample_data/model_mode_raw.json
+python src/sanitize_points.py sample_data/model_mode_raw.json | jq > sample_data/model_mode.json
 ```
 You can view the adiabatic surfaces using 
 ```bash
-python src/plot_points.py <model_mode_cm.json>
+python src/plot_points.py <model_mode.json>
 ```
 To find the diabatic expansion parameters use
 ```bash
 # Before use edit the value of the diabatic coupling in the fit_kdc file
 # lambda1AB
-python ./src/fit_kdc.py <model_mode_cm.json> --verbose
+python ./src/fit_kdc.py <model_mode.json> --verbose
 # or 
-python ./src/fit_kdc.py <model_mode_cm.json> --json | jq > sample_data/model_mode_kappas.json
+python ./src/fit_kdc.py <model_mode.json> --json | jq > sample_data/model_mode_kappas.json
 ```
 If you use the second option, you can view the fitting resutls with
 ```bash
