@@ -164,7 +164,6 @@ def main():
             print(f"{e_low=}")
             print(f"{e_mid=}")
             print(f"{e_top=}")
-            break
 
     else:
         print("Only two-state fit is implemented."

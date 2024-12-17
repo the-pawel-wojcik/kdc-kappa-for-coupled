@@ -37,5 +37,25 @@ If you use the second option, you can view the fitting resutls with
 python src/plot_points.py --kappas sample_data/model_kappas.json sample_data/model.json
 ```
 
-## Adiabatic surface for pyrazine
-[Only one coupling mode](sample_data/pyrazine/nu8.pdf)
+## Example
+Using the sample data for pyrazine coupling the first and second bright excited
+states
+```bash
+python src/fit_kdc.py --json ./sample_data/pyrazine/1B3u+1B2u+nu8/1B3u+1B2u+nu8.json
+```
+the model produces the fitted diabatic expansion coefficies
+```json
+{
+  "kappa1A": 0.0006979295527113924,
+  "kappa2A": 651.9440166138535,
+  "kappa1B": 0.0008868137608524403,
+  "kappa2B": 861.3966128591228
+}
+```
+The fitting-quality can be easily checked using 
+```bash
+python src/plot_points.py --kappas_json sample_data/pyrazine/1B3u+1B2u+nu8/1B3u+1B2u+nu8_kappas.json sample_data/pyrazine/1B3u+1B2u+nu8/1B3u+1B2u+nu8.json
+```
+The above commond produces the figure below, which shows the ab initio data
+(solid lines) agains the fitted potential (dots)
+[Only one coupling mode](sample_data/pyrazine/1B3u+1B2u+nu8/scan_vs_fit.pdf)
