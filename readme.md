@@ -24,6 +24,9 @@ You can view the adiabatic surfaces using
 ```bash
 python src/plot_points.py <model_mode.json>
 ```
+The `get_points` script has extra flags that allow to check if all points for a
+given state have convered to the same states. See `get_points`.
+
 To find the diabatic expansion parameters use
 ```bash
 # Before use edit the value of the diabatic coupling in the fit_kdc file

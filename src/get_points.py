@@ -61,7 +61,20 @@ def get_args():
         action=keyvalue
     )
     parser.add_argument('-v', '--verbose', default=False, action='store_true')
-    parser.add_argument('--show_overlaps', default=False, action='store_true')
+    parser.add_argument(
+        '-o',
+        '--show_overlaps',
+        default=False,
+        action='store_true',
+        help="Shows a matrix showing the overlaps between the EOM amplitudes"
+        " treated as elements of a vector.",
+    )
+    parser.add_argument(
+        '-a',
+        '--show_leading_amps',
+        default=False,
+        action='store_true',
+    )
     args = parser.parse_args()
     return args
 
@@ -100,7 +113,49 @@ def show_overlaps(amplitudes):
                 singles_matrix[bra_idx][ket_idx] = singles_overlap(bra, ket)
 
         sbs.heatmap(singles_matrix, ax=ax, square=True)
-        ax.set_title(key)
+        ax.set_title(f"Singles amplitudes overlap: {key}")
+        ax.set_xlabel("PES point")
+        ax.set_ylabel("PES point")
+        plt.show()
+
+
+def show_leading_amps(amplitudes: dict[str, list[dict]]):
+    """
+    amplitudes is a dictionary with keys naming states. The values stored at
+    each state's name are lists of a length matching number of points in the
+    PES. Each element shows the converted root's amplitudes under.
+    """
+    AMP_THRESH = 0.1
+    for state_name, converged_roots in amplitudes.items():
+        mos_ids = set()
+        for root in converged_roots:
+            singles = root['singles']
+            for single in singles:
+                if single['amplitude'] > AMP_THRESH:
+                    mos_ids.add(tuple([single['A'], single['I']]))
+
+        amps_array = np.zeros(
+            shape=(len(mos_ids), len(converged_roots)),
+            dtype=np.float64
+        )
+        for pes_idx, root in enumerate(converged_roots):
+            for idx, mo in enumerate(mos_ids):
+                matching_amplitude = find_matching_amplitude(
+                    root['singles'],
+                    {'A': mo[0], 'I': mo[1]},
+                )
+                if matching_amplitude is None:
+                    continue
+                amps_array[idx, pes_idx] = abs(matching_amplitude['amplitude'])
+
+        fig, ax = plt.subplots()
+        for mo_id, mo_amps in zip(mos_ids, amps_array):
+            ax.plot(mo_amps, label=f"I={mo_id[1]} A={mo_id[0]}")
+        ax.set_title(f"Leading amplitudes for {state_name}")
+        ax.set_ylabel("Amplitude")
+        ax.set_xlabel("PES point id")
+        ax.legend()
+
         plt.show()
 
 
@@ -126,6 +181,9 @@ def main():
     # amplitudes
     if args.show_overlaps is True:
         show_overlaps(amplitudes)
+
+    if args.show_leading_amps is True:
+        show_leading_amps(amplitudes)
 
     out_pack = {
         state_name: {'energies, au': energies_au[state_name]}
