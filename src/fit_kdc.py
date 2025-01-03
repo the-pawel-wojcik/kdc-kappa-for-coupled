@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import json
 import scipy.optimize as sopt
@@ -8,9 +6,33 @@ import numpy
 from three_state import get_eigenvalues
 
 # lambda1AB = 1560  # pyrazie 1B3u 1B2u along nu8
+# MODE = {
+#     'number': 8,
+#     'symmetry': 'b1g',
+# }
+
 # lambda1AB = -504.8  # pyrazine 1B3u 1B1u along nu14
-lambda1AB = 1384.2  # pyrazine 1B3u 2B1u along nu14
+# lambda1AB = 1384.2  # pyrazine 1B3u 2B1u along nu14
+# MODE = {
+#     'number': 14,
+#     'symmetry': 'b2g',
+# }
+
+# lambda1AB = -1940.6  # pyrazine 1B3u 1Au along nu20
+# MODE = {
+#     'number': 20,
+#     'symmetry': 'b3g',
+# }
+
+lambda1AB = 1102.4  # pyrazine 1B3u 1Ag along nu24
+MODE = {
+    'number': 24,
+    'symmetry': 'b3u',
+}
+
 au_to_cm = 219474.629370
+Ha_to_cm = 219474.6301460127
+cm_to_Ha = 4.556335278180978e-06
 
 
 def poly_2(x: float, a: float, b: float, c: float) -> float:
@@ -62,6 +84,13 @@ def get_args():
     parser.add_argument('pes_file')
     out_opt = parser.add_mutually_exclusive_group()
     out_opt.add_argument(
+        '--xsim',
+        help='Save output as a JSON file suitable for input to the xsim'
+        ' program.',
+        default=False,
+        action='store_true',
+    )
+    out_opt.add_argument(
         '--json',
         help='Save output as a JSON file.',
         default=False,
@@ -105,7 +134,7 @@ def fit_two_states(
     return optimization_result
 
 
-def print_optimized_kappas(kappas: list[float], lower, upper):
+def print_optimized_kappas(kappas, lower, upper):
     print("Fitted kappas:")
     print(f"{lower['name']}:")
     print(f" 1st: {kappas[0]:6.1f}")
@@ -113,6 +142,26 @@ def print_optimized_kappas(kappas: list[float], lower, upper):
     print(f"{upper['name']}:")
     print(f" 1st: {kappas[2]:6.1f}")
     print(f" 2nd: {kappas[3]:6.1f}\n")
+
+
+def build_xsim_coupling(energy, kappa):
+    return {
+        'EOM states':[{
+            'energy': {
+                'total': {
+                    'au': energy * cm_to_Ha,
+                    'cm-1': energy, 
+                    } 
+                } 
+            }] * 2,
+        'normal modes': [{
+            "Mulliken": {
+                'number': MODE['number'],
+                'symmetry': MODE['symmetry']
+                }
+            }] * 2,
+        'kappa, cm-1': kappa
+    }
 
 
 def main():
@@ -140,6 +189,7 @@ def main():
                 lower=states[0],
                 upper=states[1],
             )
+
         elif args.json is True:
             print(json.dumps({
                 'kappa1A': kappas[0],
@@ -147,6 +197,17 @@ def main():
                 'kappa1B': kappas[2],
                 'kappa2B': kappas[3],
             }))
+
+        elif args.xsim is True:
+            xsim_pack = list()
+            xsim_pack.append( 
+                build_xsim_coupling(states[0]['min energy, cm-1'], kappas[1])
+            )
+            xsim_pack.append( 
+                build_xsim_coupling(states[1]['min energy, cm-1'], kappas[3])
+            )
+            print(json.dumps(xsim_pack))
+
     elif len(states) == 3:
         lambda_14_1B3u_1B1u = -504.8
         lambda_14_1B3u_2B1u = 1384.2

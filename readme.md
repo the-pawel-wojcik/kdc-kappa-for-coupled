@@ -29,11 +29,12 @@ given state have convered to the same states. See `get_points`.
 
 To find the diabatic expansion parameters use
 ```bash
-# Before use edit the value of the diabatic coupling in the fit_kdc file
+# Before use, edit the value of the diabatic coupling in the fit_kdc file
 # lambda1AB
-python ./src/fit_kdc.py <model_mode.json> --verbose
+python src/fit_kdc.py <model_mode.json> --verbose
 # or 
-python ./src/fit_kdc.py <model_mode.json> --json | jq > sample_data/model_mode_kappas.json
+python src/fit_kdc.py <model_mode.json> --json | jq > sample_data/model_mode_kappas.json
+# or --xsim if you would like to use it with the input_mk.py for xsim
 ```
 If you use the second option, you can view the fitting resutls with
 ```bash
